@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { BuyCreditsForm } from '@/components/BuyCreditsForm';
 import { CreditBalanceDisplay } from '@/components/CreditBalanceDisplay';
 import { UseCreditsForm } from '@/components/UseCreditsForm';
@@ -8,6 +9,11 @@ export default function Home() {
       <header className="app-header">
         <h1>💰 IDRX Payment Portal</h1>
         <p>Purchase credits using IDRX stablecoin on Base Sepolia</p>
+        <nav className="nav-links">
+          <Link href="/generate" className="nav-link primary">
+            AI Content Generator
+          </Link>
+        </nav>
       </header>
 
       <main className="main-content">

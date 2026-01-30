@@ -10,11 +10,20 @@
   },
   "dependencies": {
     "@coinbase/onchainkit": "^1.1.2",
+    "@farcaster/auth-kit": "^0.8.1",
+    "@farcaster/hub-nodejs": "^0.15.9",
+    "@neynar/nodejs-sdk": "^3.130.0",
+    "@noble/curves": "^2.0.1",
+    "@noble/hashes": "^2.0.1",
+    "@privy-io/react-auth": "^3.12.0",
+    "@standard-crypto/farcaster-js": "^7.4.0",
     "@tanstack/react-query": "^5.90.20",
+    "apify-client": "^2.22.0",
+    "groq-sdk": "^0.37.0",
     "next": "16.1.4",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "viem": "^2.45.0",
+    "viem": "^2.45.1",
     "wagmi": "^2.19.5"
   },
   "devDependencies": {
