@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAccount } from 'wagmi';
 import { Navbar } from '@/components/layout';
 import { CreditBalanceDisplay } from '@/components/CreditBalanceDisplay';
+import { FaucetCard } from '@/components/FaucetCard';
 import { useContentHistory } from '@/hooks/useContentHistory';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 
@@ -89,6 +90,11 @@ function DashboardContent() {
         {/* Balance Cards */}
         <div className="px-4 py-6">
           <CreditBalanceDisplay />
+        </div>
+
+        {/* Faucet Card */}
+        <div className="px-4 pb-6">
+          <FaucetCard />
         </div>
 
         {/* Quick Create */}
