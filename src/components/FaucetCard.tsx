@@ -21,17 +21,17 @@ export function FaucetCard() {
   const [countdown, setCountdown] = useState<string>("");
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // Format balance to readable number
-  const formattedBalance = (Number(balance) / 1_000_000).toLocaleString('en-US', {
+  // Format balance to readable number (2 decimals for IDRX)
+  const formattedBalance = (Number(balance) / 100).toLocaleString('en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
 
-  // Amount presets
+  // Amount presets (2 decimals for IDRX)
   const amountPresets = [
-    { label: "1K", value: 1_000n * 10n ** 6n },
-    { label: "5K", value: 5_000n * 10n ** 6n },
-    { label: "10K", value: 10_000n * 10n ** 6n },
+    { label: "1K", value: 1_000n * 10n ** 2n },
+    { label: "5K", value: 5_000n * 10n ** 2n },
+    { label: "10K", value: 10_000n * 10n ** 2n },
   ];
 
   // Countdown timer

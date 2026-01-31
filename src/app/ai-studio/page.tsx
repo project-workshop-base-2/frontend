@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowLeft, Zap, Copy, RotateCcw, ChevronDown, Check } from 'lucide-react';
+import { ArrowLeft, Zap, Copy, RotateCcw, ChevronDown, Check, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAccount } from 'wagmi';
 import { Navbar } from '@/components/layout';
@@ -201,11 +201,6 @@ function AIStudioContent() {
               {hooksLoading ? 'Generating...' : 'Generate Hooks'}
               <span className="ml-2 text-xs">- 1 Credit</span>
             </button>
-            {(hooksError || contentError) && (
-              <div className="mt-4 p-3 bg-red-500/20 border border-red-500/30 rounded-lg text-sm text-red-400">
-                {hooksError || contentError}
-              </div>
-            )}
           </div>
         )}
 
@@ -327,6 +322,45 @@ function AIStudioContent() {
         )}
 
         <Navbar hidden={step === 'hooks' || step === 'preview'} />
+
+        {/* Error Modal */}
+        {(contentError || hooksError) && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+            <div className="bg-[#1A1F3A] border border-red-500/30 rounded-2xl p-6 max-w-sm w-full relative">
+              <div className="flex items-start gap-4 mb-4">
+                <div className="w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <AlertCircle className="w-6 h-6 text-red-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white mb-2">Generation Failed</h3>
+                  <p className="text-sm text-gray-300">
+                    {contentError || hooksError}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                {(contentError?.includes('Insufficient credits') || hooksError?.includes('Insufficient credits')) && (
+                  <button
+                    onClick={() => router.push('/wallet')}
+                    className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold text-white transition-colors"
+                  >
+                    Buy Credits
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    if (contentError) setStep('hooks');
+                    else if (hooksError) setStep('topic');
+                  }}
+                  className="w-full px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg font-semibold text-white transition-colors"
+                >
+                  Go Back
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

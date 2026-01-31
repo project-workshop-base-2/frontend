@@ -9,6 +9,11 @@ import {
 } from "@/lib/ai-agent";
 import { PersonalityConfig } from "@/types/personality";
 import { getSupabaseServerClient } from "@/lib/supabase";
+import { createPublicClient, createWalletClient, http, parseAbi } from 'viem';
+import { baseSepolia } from 'viem/chains';
+import { privateKeyToAccount } from 'viem/accounts';
+import { PAYMENT_GATEWAY_ADDRESS } from '@/contract';
+import PAYMENT_GATEWAY_ABI from '@/abi/x402.json';
 
 // Lazy initialize Groq client
 function getGroqClient() {
@@ -17,6 +22,66 @@ function getGroqClient() {
     throw new Error("GROQ_API_KEY environment variable is not set");
   }
   return new Groq({ apiKey });
+}
+
+// Initialize blockchain clients
+const publicClient = createPublicClient({
+  chain: baseSepolia,
+  transport: http(process.env.BASE_SEPOLIA_RPC_URL || 'https://sepolia.base.org'),
+});
+
+function getWalletClient() {
+  const privateKey = process.env.BACKEND_WALLET_PRIVATE_KEY;
+  if (!privateKey) {
+    throw new Error("BACKEND_WALLET_PRIVATE_KEY environment variable is not set");
+  }
+
+  const account = privateKeyToAccount(privateKey as `0x${string}`);
+
+  return createWalletClient({
+    account,
+    chain: baseSepolia,
+    transport: http(process.env.BASE_SEPOLIA_RPC_URL || 'https://sepolia.base.org'),
+  });
+}
+
+// Check user's credit balance on-chain
+async function checkCreditBalance(userAddress: string): Promise<number> {
+  try {
+    const balance = await publicClient.readContract({
+      address: PAYMENT_GATEWAY_ADDRESS as `0x${string}`,
+      abi: PAYMENT_GATEWAY_ABI,
+      functionName: 'creditBalance',
+      args: [userAddress as `0x${string}`],
+    });
+
+    return Number(balance);
+  } catch (error) {
+    console.error('Failed to check credit balance:', error);
+    throw new Error('Failed to verify credit balance from blockchain');
+  }
+}
+
+// Deduct credits on-chain using useCreditsFor
+async function deductCredits(userAddress: string, amount: number, reason: string): Promise<string> {
+  try {
+    const walletClient = getWalletClient();
+
+    const hash = await walletClient.writeContract({
+      address: PAYMENT_GATEWAY_ADDRESS as `0x${string}`,
+      abi: PAYMENT_GATEWAY_ABI,
+      functionName: 'useCreditsFor',
+      args: [userAddress as `0x${string}`, BigInt(amount), reason],
+    });
+
+    // Wait for transaction to be mined
+    await publicClient.waitForTransactionReceipt({ hash });
+
+    return hash;
+  } catch (error) {
+    console.error('Failed to deduct credits on-chain:', error);
+    throw new Error('Failed to deduct credits from blockchain');
+  }
 }
 
 export interface ContentRequestBody {
@@ -51,6 +116,18 @@ export async function POST(request: NextRequest): Promise<NextResponse<ContentRe
           error: "Missing required fields: personality, topic, selectedHook, and userAddress",
         },
         { status: 400 }
+      );
+    }
+
+    // ===== CRITICAL: Check credit balance from blockchain =====
+    const creditBalance = await checkCreditBalance(userAddress);
+    if (creditBalance < 1) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Insufficient credits. You have ${creditBalance} credits but need 1 credit to generate content. Please buy credits first.`,
+        },
+        { status: 402 } // Payment Required
       );
     }
 
@@ -123,7 +200,23 @@ export async function POST(request: NextRequest): Promise<NextResponse<ContentRe
       }
     }
 
-    // Save to Supabase
+    // ===== CRITICAL: Deduct credits on-chain BEFORE returning content =====
+    let txHash: string | undefined;
+    try {
+      txHash = await deductCredits(userAddress, 1, 'AI_CONTENT_GENERATION');
+      console.log(`✅ Credits deducted on-chain. TX Hash: ${txHash}`);
+    } catch (creditError) {
+      console.error('Failed to deduct credits on-chain:', creditError);
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Content generated but failed to deduct credits from blockchain. Please try again.',
+        },
+        { status: 500 }
+      );
+    }
+
+    // Save to Supabase (with transaction hash for verification)
     let contentId: string | undefined;
     try {
       const supabaseServer = getSupabaseServerClient();
@@ -136,14 +229,15 @@ export async function POST(request: NextRequest): Promise<NextResponse<ContentRe
           selected_hook: selectedHook,
           generated_content: finalContent,
           credits_used: 1,
-          status: 'generated'
+          status: 'generated',
+          cast_hash: txHash, // Store blockchain TX hash for verification
         })
         .select()
         .single();
 
       if (dbError) {
         console.error('Failed to save to database:', dbError);
-        // Don't fail request - user still gets content
+        // Don't fail request - user still gets content and credits already deducted
       } else {
         contentId = savedContent?.id;
       }

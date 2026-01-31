@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Zap, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Zap, ChevronLeft, ChevronRight, AlertCircle, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAccount } from 'wagmi';
 import { Navbar } from '@/components/layout';
@@ -9,6 +9,7 @@ import { CreditBalanceDisplay } from '@/components/CreditBalanceDisplay';
 import { FaucetCard } from '@/components/FaucetCard';
 import { useContentHistory } from '@/hooks/useContentHistory';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { useUserCredits } from '@/hooks/useUserCredits';
 
 export default function DashboardPage() {
   return (
@@ -23,11 +24,24 @@ function DashboardContent() {
   const { address } = useAccount();
   const [currentPage, setCurrentPage] = useState(1);
   const [mounted, setMounted] = useState(false);
+  const [showCreditWarning, setShowCreditWarning] = useState(false);
   const postsPerPage = 5;
+
+  // Get user's credit balance
+  const { creditBalance, isLoading: creditLoading } = useUserCredits();
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Handle Generate Now click with credit check
+  const handleGenerateClick = () => {
+    if (creditBalance === 0) {
+      setShowCreditWarning(true);
+    } else {
+      router.push('/ai-studio');
+    }
+  };
 
   // Helper functions - must be defined before use
   const formatTimestamp = (timestamp: string) => {
@@ -115,11 +129,21 @@ function DashboardContent() {
               </div>
             </div>
             <button
-              onClick={() => router.push('/ai-studio')}
-              className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
+              onClick={handleGenerateClick}
+              disabled={creditLoading}
+              className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
             >
-              <Zap className="w-4 h-4" />
-              Generate Now
+              {creditLoading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Loading...
+                </>
+              ) : (
+                <>
+                  <Zap className="w-4 h-4" />
+                  Generate Now
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -163,7 +187,7 @@ function DashboardContent() {
             <div className="bg-[#1A1F3A] border border-blue-700/30 rounded-xl p-6 text-center">
               <p className="text-gray-400 mb-2">No content generated yet</p>
               <button
-                onClick={() => router.push('/ai-studio')}
+                onClick={handleGenerateClick}
                 className="text-blue-400 text-sm hover:underline"
               >
                 Generate your first post
@@ -192,6 +216,50 @@ function DashboardContent() {
         </div>
 
         <Navbar />
+
+        {/* Credit Warning Modal */}
+        {showCreditWarning && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+            <div className="bg-[#1A1F3A] border border-red-500/30 rounded-2xl p-6 max-w-sm w-full relative">
+              <button
+                onClick={() => setShowCreditWarning(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="flex items-start gap-4 mb-4">
+                <div className="w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <AlertCircle className="w-6 h-6 text-red-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white mb-2">Insufficient Credits</h3>
+                  <p className="text-sm text-gray-300">
+                    You need at least 1 credit to generate AI content. Please buy credits first.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <button
+                  onClick={() => {
+                    setShowCreditWarning(false);
+                    router.push('/wallet');
+                  }}
+                  className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold text-white transition-colors"
+                >
+                  Buy Credits
+                </button>
+                <button
+                  onClick={() => setShowCreditWarning(false)}
+                  className="w-full px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg font-semibold text-white transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

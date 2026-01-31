@@ -89,7 +89,7 @@ export function useFaucet(): UseFaucetReturn {
       }
 
       if (amount > FAUCET_CONFIG.MAX_AMOUNT) {
-        setError(`Maximum claim amount is ${Number(FAUCET_CONFIG.MAX_AMOUNT) / 1_000_000} IDRX`);
+        setError(`Maximum claim amount is ${Number(FAUCET_CONFIG.MAX_AMOUNT) / 100} IDRX`);
         return;
       }
 
