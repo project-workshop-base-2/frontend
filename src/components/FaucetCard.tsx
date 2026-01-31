@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Coins, Clock, Check, AlertCircle } from "lucide-react";
 import { useFaucet } from "@/hooks/useFaucet";
-import { FAUCET_CONFIG } from "@/config/contracts";
+import { FAUCET_CONFIG, CONTRACTS } from "@/config/contracts";
 
 export function FaucetCard() {
   const {
@@ -21,6 +21,17 @@ export function FaucetCard() {
   const [selectedAmount, setSelectedAmount] = useState<bigint>(FAUCET_CONFIG.DEFAULT_AMOUNT);
   const [countdown, setCountdown] = useState<string>("");
   const [showSuccess, setShowSuccess] = useState(false);
+
+  // Debug: Log contract address and balance
+  useEffect(() => {
+    console.log('🔍 [FAUCET DEBUG]', {
+      contractAddress: CONTRACTS.MOCK_IDRX.address,
+      balance: balance.toString(),
+      formattedBalance: (Number(balance) / 100).toFixed(2),
+      canClaim,
+      remainingTime,
+    });
+  }, [balance, canClaim, remainingTime]);
 
   // Format balance to readable number (2 decimals for IDRX)
   const formattedBalance = (Number(balance) / 100).toLocaleString('en-US', {
@@ -192,6 +203,12 @@ export function FaucetCard() {
           <div className="flex items-center justify-between">
             <span>Max Per Claim:</span>
             <span className="text-white">10,000 IDRX</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span>Contract:</span>
+            <span className="text-white font-mono text-[10px]">
+              {CONTRACTS.MOCK_IDRX.address.slice(0, 6)}...{CONTRACTS.MOCK_IDRX.address.slice(-4)}
+            </span>
           </div>
         </div>
       </div>
