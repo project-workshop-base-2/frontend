@@ -48,8 +48,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isFarcasterConnected: isFarcasterAuth,
     farcasterProfile,
 
-    // Combined - user must have BOTH wallet AND Farcaster
-    isFullyAuthenticated: isConnected && isFarcasterAuth,
+    // Combined - user only needs wallet to be authenticated (Farcaster is optional)
+    isFullyAuthenticated: isConnected,
     isLoading,
 
     // Mini App

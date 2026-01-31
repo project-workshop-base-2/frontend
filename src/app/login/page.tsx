@@ -94,7 +94,7 @@ export default function LoginPage() {
           {/* Divider */}
           <div className="border-t border-blue-700/30"></div>
 
-          {/* Step 2: Farcaster Account */}
+          {/* Step 2: Farcaster Account (Optional) */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -112,6 +112,7 @@ export default function LoginPage() {
                   )}
                 </div>
                 <h3 className="text-white font-semibold">Connect Farcaster</h3>
+                <span className="text-xs text-gray-500 italic">(Optional)</span>
               </div>
             </div>
 
@@ -119,7 +120,7 @@ export default function LoginPage() {
               <div className="pl-8">
                 <p className="text-sm text-gray-400 mb-3">
                   {isWalletConnected
-                    ? 'Sign in with your Farcaster account to post content'
+                    ? 'Optional: Connect Farcaster to post content directly from the app'
                     : 'Complete Step 1 first'}
                 </p>
                 {isWalletConnected && (
