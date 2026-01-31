@@ -9,6 +9,7 @@ export function FaucetCard() {
   const {
     canClaim,
     isLoading,
+    isDataLoading,
     isClaiming,
     remainingTime,
     balance,
@@ -72,6 +73,7 @@ export function FaucetCard() {
   };
 
   const getButtonState = () => {
+    if (isDataLoading) return { text: "Loading...", disabled: true };
     if (isLoading) return { text: "Processing...", disabled: true };
     if (isClaiming) return { text: "Claiming...", disabled: true };
     if (!canClaim) return { text: `Next claim in ${countdown}`, disabled: true };
@@ -93,18 +95,22 @@ export function FaucetCard() {
             <p className="text-xs text-gray-400">Free testnet tokens</p>
           </div>
         </div>
-        {canClaim && (
+        {isDataLoading ? (
+          <div className="flex items-center gap-1 text-xs text-gray-400">
+            <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin" />
+            Loading...
+          </div>
+        ) : canClaim ? (
           <div className="flex items-center gap-1 text-xs text-green-400">
             <Check className="w-3 h-3" />
             Available
           </div>
-        )}
-        {!canClaim && remainingTime > 0 && (
+        ) : remainingTime > 0 ? (
           <div className="flex items-center gap-1 text-xs text-orange-400">
             <Clock className="w-3 h-3" />
             Cooldown
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* Balance Display */}

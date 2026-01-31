@@ -7,6 +7,7 @@ import { CONTRACTS, FAUCET_CONFIG } from "@/config/contracts";
 interface UseFaucetReturn {
   canClaim: boolean;
   isLoading: boolean;
+  isDataLoading: boolean;
   isClaiming: boolean;
   remainingTime: number;
   lastClaimTime: number;
@@ -35,7 +36,7 @@ export function useFaucet(): UseFaucetReturn {
   });
 
   // Read if user can claim
-  const { data: canClaim = false, refetch: refetchCanClaim } = useReadContract({
+  const { data: canClaim = false, refetch: refetchCanClaim, isLoading: isCanClaimLoading } = useReadContract({
     address: CONTRACTS.MOCK_IDRX.address,
     abi: CONTRACTS.MOCK_IDRX.abi,
     functionName: 'canClaimFaucet',
@@ -46,7 +47,7 @@ export function useFaucet(): UseFaucetReturn {
   });
 
   // Read remaining cooldown time
-  const { data: remainingTime = 0, refetch: refetchCooldown } = useReadContract({
+  const { data: remainingTime = 0, refetch: refetchCooldown, isLoading: isRemainingTimeLoading } = useReadContract({
     address: CONTRACTS.MOCK_IDRX.address,
     abi: CONTRACTS.MOCK_IDRX.abi,
     functionName: 'getTimeUntilNextClaim',
@@ -145,6 +146,7 @@ export function useFaucet(): UseFaucetReturn {
   return {
     canClaim: Boolean(canClaim),
     isLoading: isWritePending || isConfirming,
+    isDataLoading: isCanClaimLoading || isRemainingTimeLoading,
     isClaiming,
     remainingTime: Number(remainingTime),
     lastClaimTime: Number(lastClaimTime),
