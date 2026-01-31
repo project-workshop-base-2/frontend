@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { SignInButton, useProfile } from "@farcaster/auth-kit";
 import { useComposeCast } from '@coinbase/onchainkit/minikit';
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
+import { useAccount } from 'wagmi';
 
 interface FarcasterPostButtonProps {
   content: string;
@@ -18,11 +18,12 @@ export function FarcasterPostButton({
   onSuccess,
   onError,
 }: FarcasterPostButtonProps) {
-  const { isAuthenticated, profile } = useProfile();
   const { composeCast } = useComposeCast();
   const { context } = useMiniKit();
+  const { address, isConnected } = useAccount();
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [isPosting, setIsPosting] = useState(false);
 
   // Check if we're in Mini App context
   const isInMiniApp = !!context;
@@ -35,41 +36,17 @@ export function FarcasterPostButton({
 
   // Handle posting via Mini App SDK or fallback to Warpcast
   const handlePostToFarcaster = async () => {
-    if (!isInMiniApp) {
-      // Fallback: open Warpcast if not in Mini App
-      const url = getWarpcastUrl();
-      window.open(url, '_blank', 'noopener,noreferrer');
-
-      // Update database status to "posted" (optimistic)
-      if (contentId) {
-        try {
-          await fetch('/api/content/update', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contentId,
-              status: 'posted',
-            }),
-          });
-        } catch (err) {
-          console.error('Failed to update content status:', err);
-        }
-      }
-
-      onSuccess?.('shared');
-      return;
-    }
+    setIsPosting(true);
+    setError(null);
 
     try {
-      // Use the MiniKit composeCast hook for direct posting
-      composeCast({
-        text: content.trim(),
-        embeds: [] // Can add frame URL here if needed
-      });
+      if (!isInMiniApp) {
+        // Fallback: open Warpcast if not in Mini App
+        const url = getWarpcastUrl();
+        window.open(url, '_blank', 'noopener,noreferrer');
 
-      // Update database status to "posted"
-      if (contentId) {
-        try {
+        // Update database status to "posted" (optimistic)
+        if (contentId) {
           await fetch('/api/content/update', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -78,12 +55,30 @@ export function FarcasterPostButton({
               status: 'posted',
             }),
           });
-        } catch (err) {
-          console.error('Failed to update content status:', err);
         }
-      }
 
-      onSuccess?.('cast-composed');
+        onSuccess?.('shared');
+      } else {
+        // Use the MiniKit composeCast hook for direct posting
+        composeCast({
+          text: content.trim(),
+          embeds: [window.location.origin] // Add app URL as embed
+        });
+
+        // Update database status to "posted"
+        if (contentId) {
+          await fetch('/api/content/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contentId,
+              status: 'posted',
+            }),
+          });
+        }
+
+        onSuccess?.('cast-composed');
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to compose cast';
       setError(errorMessage);
@@ -104,8 +99,11 @@ export function FarcasterPostButton({
           console.error('Failed to update failure status:', updateErr);
         }
       }
-
-      setTimeout(() => setError(null), 3000);
+    } finally {
+      setIsPosting(false);
+      if (error) {
+        setTimeout(() => setError(null), 3000);
+      }
     }
   };
 
@@ -121,60 +119,39 @@ export function FarcasterPostButton({
     }
   };
 
-  // Not authenticated - show sign in button
-  if (!isAuthenticated || !profile) {
+  // Not connected - show connect wallet message
+  if (!isConnected) {
     return (
       <div className="farcaster-post">
-        <SignInButton
-          onSuccess={({ fid, username }) => {
-            console.log(`Signed in as @${username} (FID: ${fid})`);
-          }}
-          onError={(err) => {
-            setError(err?.message || 'Sign in failed');
-          }}
-        />
-        {error && <div className="fc-error">{error}</div>}
-        <p className="fc-hint">Sign in to share your content on Farcaster</p>
+        <div className="fc-error">Connect your wallet to share content</div>
         <style jsx>{styles}</style>
       </div>
     );
   }
 
-  // Authenticated - show share options
+  // Connected - show share options
   return (
     <div className="farcaster-post">
-      <div className="fc-user">
-        {profile.pfpUrl && (
-          <img src={profile.pfpUrl} alt={profile.username} className="fc-avatar" />
-        )}
-        <div className="fc-user-info">
-          <span className="fc-username">@{profile.username}</span>
-          <SignInButton
-            hideSignOut={false}
-            onSignOut={() => {
-              console.log('Signed out');
-            }}
-          />
-        </div>
-      </div>
-
       {error && <div className="fc-error">{error}</div>}
 
       <div className="fc-actions">
         <button
           className="fc-btn primary"
           onClick={handlePostToFarcaster}
-          disabled={!content}
+          disabled={!content || isPosting}
           title={isInMiniApp ? "Post directly to Farcaster" : "Opens Warpcast with your content pre-filled"}
         >
           <FarcasterIcon />
-          {isInMiniApp ? 'Post to Farcaster' : 'Share to Warpcast'}
+          {isPosting
+            ? 'Posting...'
+            : (isInMiniApp ? 'Post to Farcaster' : 'Share to Warpcast')
+          }
         </button>
 
         <button
           className="fc-btn secondary"
           onClick={handleCopyContent}
-          disabled={!content}
+          disabled={!content || isPosting}
           title="Copy content to clipboard"
         >
           {copied ? (
@@ -193,8 +170,8 @@ export function FarcasterPostButton({
 
       <p className="fc-hint">
         {isInMiniApp
-          ? 'Click "Post to Farcaster" to compose your cast directly'
-          : 'Click "Share to Warpcast" to open Warpcast with your content ready to post'}
+          ? '✨ Using OnchainKit MiniKit - Direct posting to Farcaster'
+          : 'Opens Warpcast with your content ready to post'}
       </p>
 
       <style jsx>{styles}</style>
