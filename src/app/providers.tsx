@@ -7,6 +7,7 @@ import { WagmiProvider, createConfig, http } from 'wagmi';
 import { baseSepolia } from 'wagmi/chains';
 import { useState, type ReactNode } from 'react';
 import { AuthKitProvider } from '@farcaster/auth-kit';
+import { AuthProvider } from '@/contexts/AuthContext';
 
 import '@coinbase/onchainkit/styles.css';
 import '@farcaster/auth-kit/styles.css';
@@ -49,7 +50,9 @@ export function Providers({ children }: { children: ReactNode }) {
                             }}
                             apiKey={process.env.NEXT_PUBLIC_CDP_CLIENT_API_KEY}
                         >
-                            {children}
+                            <AuthProvider>
+                                {children}
+                            </AuthProvider>
                         </OnchainKitProvider>
                     </QueryClientProvider>
                 </WagmiProvider>
@@ -90,7 +93,9 @@ export function Providers({ children }: { children: ReactNode }) {
                             }}
                             apiKey={process.env.NEXT_PUBLIC_CDP_CLIENT_API_KEY}
                         >
-                            {children}
+                            <AuthProvider>
+                                {children}
+                            </AuthProvider>
                         </OnchainKitProvider>
                     </QueryClientProvider>
                 </WagmiProvider>

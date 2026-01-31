@@ -7,8 +7,17 @@ import { useAccount } from 'wagmi';
 import { Navbar } from '@/components/layout';
 import { CreditBalanceDisplay } from '@/components/CreditBalanceDisplay';
 import { useContentHistory } from '@/hooks/useContentHistory';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 export default function DashboardPage() {
+  return (
+    <ProtectedRoute>
+      <DashboardContent />
+    </ProtectedRoute>
+  );
+}
+
+function DashboardContent() {
   const router = useRouter();
   const { address } = useAccount();
   const [currentPage, setCurrentPage] = useState(1);

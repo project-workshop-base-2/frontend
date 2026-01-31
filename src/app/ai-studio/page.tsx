@@ -8,10 +8,19 @@ import { Navbar } from '@/components/layout';
 import { FarcasterPostButton } from '@/components/FarcasterPostButton';
 import { usePersonalityTemplates } from '@/hooks/usePersonalityTemplates';
 import { useContentGeneration } from '@/hooks/useContentGeneration';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 type Step = 'personality' | 'topic' | 'hooks' | 'preview';
 
 export default function AIStudioPage() {
+  return (
+    <ProtectedRoute>
+      <AIStudioContent />
+    </ProtectedRoute>
+  );
+}
+
+function AIStudioContent() {
   const router = useRouter();
   const { address } = useAccount();
   const [step, setStep] = useState<Step>('personality');
