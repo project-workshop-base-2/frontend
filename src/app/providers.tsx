@@ -4,8 +4,9 @@ import { OnchainKitProvider } from '@coinbase/onchainkit';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { type State, WagmiProvider } from 'wagmi';
 import { baseSepolia } from 'viem/chains';
-import { useState, type ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { AuthKitProvider } from '@farcaster/auth-kit';
+import { sdk } from '@farcaster/miniapp-sdk';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { getWagmiConfig } from '@/lib/wagmi';
 
@@ -34,6 +35,11 @@ export function Providers({
             },
         },
     }));
+
+    // Initialize Farcaster miniapp SDK
+    useEffect(() => {
+        sdk.actions.ready();
+    }, []);
 
     const privyAppId = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
 
