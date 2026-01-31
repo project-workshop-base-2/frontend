@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useAccount } from "wagmi";
 
 interface ContentHistoryItem {
@@ -21,16 +21,19 @@ export function useContentHistory() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
+  const mountedRef = useRef(true);
 
   const fetchHistory = useCallback(
     async (offset = 0, limit = 10) => {
       if (!address) {
-        setError('Wallet not connected');
+        if (mountedRef.current) setError('Wallet not connected');
         return;
       }
 
-      setIsLoading(true);
-      setError(null);
+      if (mountedRef.current) {
+        setIsLoading(true);
+        setError(null);
+      }
 
       try {
         const params = new URLSearchParams({
@@ -46,14 +49,16 @@ export function useContentHistory() {
           throw new Error(data.error || 'Failed to fetch history');
         }
 
-        setHistory(data.data || []);
-        setTotal(data.total || 0);
+        if (mountedRef.current) {
+          setHistory(data.data || []);
+          setTotal(data.total || 0);
+        }
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to fetch history';
-        setError(errorMessage);
+        if (mountedRef.current) setError(errorMessage);
         console.error('Content history error:', err);
       } finally {
-        setIsLoading(false);
+        if (mountedRef.current) setIsLoading(false);
       }
     },
     [address]
@@ -64,10 +69,17 @@ export function useContentHistory() {
   }, [fetchHistory]);
 
   useEffect(() => {
+    mountedRef.current = true;
+
     if (address) {
       fetchHistory();
     }
-  }, [address, fetchHistory]);
+
+    return () => {
+      mountedRef.current = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [address]); // Only re-run when address changes, fetchHistory is stable via useCallback
 
   return {
     history,
