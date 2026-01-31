@@ -1,11 +1,11 @@
 {
   "version": "1",
-  "name": "IDRX AI Content Generator",
-  "iconUrl": "https://your-domain.com/icon-1024.png",
+  "name": "Bit AI",
+  "iconUrl": "https://your-domain.com/logoPolos.png",
   "homeUrl": "https://your-domain.com",
-  "imageUrl": "https://your-domain.com/loading-200.png",
-  "splashImageUrl": "https://your-domain.com/splash-1024.png",
-  "splashBackgroundColor": "#0066ff",
+  "imageUrl": "https://your-domain.com/assets/banner.png",
+  "splashImageUrl": "https://your-domain.com/assets/banner.png",
+  "splashBackgroundColor": "#000000",
   "accountAssociation": {
     "header": "PLACEHOLDER_HEADER",
     "payload": "PLACEHOLDER_PAYLOAD",
@@ -14,7 +14,7 @@
   "frame": {
     "version": "next",
     "homeUrl": "https://your-domain.com",
-    "imageUrl": "https://your-domain.com/og-image.png",
-    "buttonTitle": "Open App"
+    "imageUrl": "https://your-domain.com/assets/banner.png",
+    "buttonTitle": "Open Bit AI"
   }
 }
