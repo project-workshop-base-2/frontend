@@ -9,6 +9,7 @@ import { AuthKitProvider } from '@farcaster/auth-kit';
 import { sdk } from '@farcaster/miniapp-sdk';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { getWagmiConfig } from '@/lib/wagmi';
+import { checkAndUpdateVersion } from '@/lib/version-check';
 
 import '@coinbase/onchainkit/styles.css';
 import '@farcaster/auth-kit/styles.css';
@@ -37,6 +38,11 @@ export function Providers({
             },
         },
     }));
+
+    // Check contract version and force reload if changed (fixes mobile cache)
+    useEffect(() => {
+        checkAndUpdateVersion();
+    }, []);
 
     // Initialize Farcaster miniapp SDK
     useEffect(() => {
