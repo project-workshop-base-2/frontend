@@ -1,6 +1,6 @@
 import { minikitConfig } from "../../../../minikit.config";
 
-function withValidProperties(properties: Record<string, undefined | boolean | string | string[]>) {
+function withValidProperties(properties: Record<string, undefined | boolean | string | readonly string[]>) {
     return Object.fromEntries(
         Object.entries(properties).filter(([_, value]) => {
             if (typeof value === 'boolean') return true;
