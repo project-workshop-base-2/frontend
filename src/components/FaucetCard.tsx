@@ -181,7 +181,7 @@ export function FaucetCard() {
         <div className="text-xs text-gray-400 space-y-1">
           <div className="flex items-center justify-between">
             <span>Cooldown Period:</span>
-            <span className="text-white">24 hours</span>
+            <span className="text-white">5 minutes</span>
           </div>
           <div className="flex items-center justify-between">
             <span>Max Per Claim:</span>
