@@ -1,23 +1,16 @@
 'use client';
 
-import { PrivyProvider } from '@privy-io/react-auth';
 import { OnchainKitProvider } from '@coinbase/onchainkit';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { WagmiProvider, createConfig, http } from 'wagmi';
-import { baseSepolia } from 'wagmi/chains';
+import { type State, WagmiProvider } from 'wagmi';
+import { baseSepolia } from 'viem/chains';
 import { useState, type ReactNode } from 'react';
 import { AuthKitProvider } from '@farcaster/auth-kit';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { getWagmiConfig } from '@/lib/wagmi';
 
 import '@coinbase/onchainkit/styles.css';
 import '@farcaster/auth-kit/styles.css';
-
-const wagmiConfig = createConfig({
-    chains: [baseSepolia],
-    transports: {
-        [baseSepolia.id]: http(),
-    },
-});
 
 const farcasterConfig = {
     rpcUrl: 'https://mainnet.optimism.io',
@@ -25,18 +18,33 @@ const farcasterConfig = {
     siweUri: process.env.NEXT_PUBLIC_FARCASTER_SIWE_URI || 'http://localhost:3000',
 };
 
-export function Providers({ children }: { children: ReactNode }) {
-    const [queryClient] = useState(() => new QueryClient());
+export function Providers({
+    children,
+    initialState
+}: {
+    children: ReactNode;
+    initialState?: State;
+}) {
+    const [config] = useState(() => getWagmiConfig());
+    const [queryClient] = useState(() => new QueryClient({
+        defaultOptions: {
+            queries: {
+                staleTime: 1000 * 60 * 5, // 5 minutes
+                refetchOnWindowFocus: false,
+            },
+        },
+    }));
 
     const privyAppId = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
 
-    // If Privy is not configured, render without it
+    // Main provider setup with custom Wagmi config
     if (!privyAppId) {
         return (
             <AuthKitProvider config={farcasterConfig}>
-                <WagmiProvider config={wagmiConfig}>
+                <WagmiProvider config={config} initialState={initialState}>
                     <QueryClientProvider client={queryClient}>
                         <OnchainKitProvider
+                            apiKey={process.env.NEXT_PUBLIC_CDP_CLIENT_API_KEY}
                             chain={baseSepolia}
                             config={{
                                 appearance: {
@@ -48,7 +56,6 @@ export function Providers({ children }: { children: ReactNode }) {
                                 enabled: true,
                                 autoConnect: true,
                             }}
-                            apiKey={process.env.NEXT_PUBLIC_CDP_CLIENT_API_KEY}
                         >
                             <AuthProvider>
                                 {children}
@@ -62,44 +69,28 @@ export function Providers({ children }: { children: ReactNode }) {
 
     return (
         <AuthKitProvider config={farcasterConfig}>
-            <PrivyProvider
-                appId={privyAppId}
-                config={{
-                    loginMethods: ['email', 'wallet'],
-                    appearance: {
-                        theme: 'light',
-                        accentColor: '#0066ff',
-                    },
-                    embeddedWallets: {
-                        ethereum: {
-                            createOnLogin: 'off',
-                        },
-                    },
-                }}
-            >
-                <WagmiProvider config={wagmiConfig}>
-                    <QueryClientProvider client={queryClient}>
-                        <OnchainKitProvider
-                            chain={baseSepolia}
-                            config={{
-                                appearance: {
-                                    mode: 'auto',
-                                    theme: 'default',
-                                },
-                            }}
-                            miniKit={{
-                                enabled: true,
-                                autoConnect: true,
-                            }}
-                            apiKey={process.env.NEXT_PUBLIC_CDP_CLIENT_API_KEY}
-                        >
-                            <AuthProvider>
-                                {children}
-                            </AuthProvider>
-                        </OnchainKitProvider>
-                    </QueryClientProvider>
-                </WagmiProvider>
-            </PrivyProvider>
+            <WagmiProvider config={config} initialState={initialState}>
+                <QueryClientProvider client={queryClient}>
+                    <OnchainKitProvider
+                        apiKey={process.env.NEXT_PUBLIC_CDP_CLIENT_API_KEY}
+                        chain={baseSepolia}
+                        config={{
+                            appearance: {
+                                mode: 'auto',
+                                theme: 'default',
+                            },
+                        }}
+                        miniKit={{
+                            enabled: true,
+                            autoConnect: true,
+                        }}
+                    >
+                        <AuthProvider>
+                            {children}
+                        </AuthProvider>
+                    </OnchainKitProvider>
+                </QueryClientProvider>
+            </WagmiProvider>
         </AuthKitProvider>
     );
 }
