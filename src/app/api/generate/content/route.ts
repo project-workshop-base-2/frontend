@@ -8,6 +8,7 @@ import {
   type ScrapedData,
 } from "@/lib/ai-agent";
 import { PersonalityConfig } from "@/types/personality";
+import { getSupabaseServerClient } from "@/lib/supabase";
 
 // Lazy initialize Groq client
 function getGroqClient() {
@@ -23,6 +24,7 @@ export interface ContentRequestBody {
   topic: string;
   selectedHook: string;
   scrapedData?: ScrapedData;
+  userAddress: string;
 }
 
 export interface ContentResponseBody {
@@ -30,6 +32,7 @@ export interface ContentResponseBody {
   content?: string;
   hashtags?: string[];
   characterCount?: number;
+  contentId?: string;
   error?: string;
   validationErrors?: string[];
 }
@@ -38,14 +41,14 @@ export async function POST(request: NextRequest): Promise<NextResponse<ContentRe
   try {
     // Parse request body
     const body: ContentRequestBody = await request.json();
-    const { personality, topic, selectedHook, scrapedData } = body;
+    const { personality, topic, selectedHook, scrapedData, userAddress } = body;
 
     // Validate required fields
-    if (!personality || !topic || !selectedHook) {
+    if (!personality || !topic || !selectedHook || !userAddress) {
       return NextResponse.json(
         {
           success: false,
-          error: "Missing required fields: personality, topic, and selectedHook",
+          error: "Missing required fields: personality, topic, selectedHook, and userAddress",
         },
         { status: 400 }
       );
@@ -90,6 +93,10 @@ export async function POST(request: NextRequest): Promise<NextResponse<ContentRe
       personality.settings.maxPostLength
     );
 
+    let finalContent = result.content;
+    let finalHashtags = result.hashtags;
+    let validationErrors: string[] | undefined;
+
     if (!validation.valid) {
       // Try to regenerate with stricter instructions if too long
       if (result.content.length > personality.settings.maxPostLength) {
@@ -108,30 +115,50 @@ export async function POST(request: NextRequest): Promise<NextResponse<ContentRe
         const retryText = retryCompletion.choices[0]?.message?.content;
         if (retryText) {
           const retryResult = parseContentResponse(retryText);
-          return NextResponse.json({
-            success: true,
-            content: retryResult.content,
-            hashtags: retryResult.hashtags,
-            characterCount: retryResult.content.length,
-          });
+          finalContent = retryResult.content;
+          finalHashtags = retryResult.hashtags;
         }
+      } else {
+        validationErrors = validation.errors;
       }
+    }
 
-      // Return with validation errors
-      return NextResponse.json({
-        success: true,
-        content: result.content,
-        hashtags: result.hashtags,
-        characterCount: result.content.length,
-        validationErrors: validation.errors,
-      });
+    // Save to Supabase
+    let contentId: string | undefined;
+    try {
+      const supabaseServer = getSupabaseServerClient();
+
+      const { data: savedContent, error: dbError } = await supabaseServer
+        .from('content_history')
+        .insert({
+          user_address: userAddress,
+          topic: topic,
+          selected_hook: selectedHook,
+          generated_content: finalContent,
+          credits_used: 1,
+          status: 'generated'
+        })
+        .select()
+        .single();
+
+      if (dbError) {
+        console.error('Failed to save to database:', dbError);
+        // Don't fail request - user still gets content
+      } else {
+        contentId = savedContent?.id;
+      }
+    } catch (dbError) {
+      console.error('Database error:', dbError);
+      // Continue - user still gets content even if DB save fails
     }
 
     return NextResponse.json({
       success: true,
-      content: result.content,
-      hashtags: result.hashtags,
-      characterCount: result.content.length,
+      content: finalContent,
+      hashtags: finalHashtags,
+      characterCount: finalContent.length,
+      contentId,
+      validationErrors,
     });
   } catch (error) {
     console.error("Content generation error:", error);

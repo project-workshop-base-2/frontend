@@ -1,0 +1,20 @@
+{
+  "version": "1",
+  "name": "IDRX AI Content Generator",
+  "iconUrl": "https://your-domain.com/icon-1024.png",
+  "homeUrl": "https://your-domain.com",
+  "imageUrl": "https://your-domain.com/loading-200.png",
+  "splashImageUrl": "https://your-domain.com/splash-1024.png",
+  "splashBackgroundColor": "#0066ff",
+  "accountAssociation": {
+    "header": "PLACEHOLDER_HEADER",
+    "payload": "PLACEHOLDER_PAYLOAD",
+    "signature": "PLACEHOLDER_SIGNATURE"
+  },
+  "frame": {
+    "version": "next",
+    "homeUrl": "https://your-domain.com",
+    "imageUrl": "https://your-domain.com/og-image.png",
+    "buttonTitle": "Open App"
+  }
+}

@@ -64,12 +64,11 @@ export function UseCreditsForm() {
 
     if (!isConnected) {
         return (
-            <div className="use-credits-card">
-                <h2>Use Credits</h2>
-                <p className="subtitle">Connect your wallet to use credits</p>
+            <div className="text-center">
+                <p className="text-sm text-gray-400 mb-4">Connect your wallet to use credits</p>
                 <Wallet>
-                    <ConnectWallet className="connect-btn">
-                        <Avatar className="avatar" />
+                    <ConnectWallet className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors flex items-center justify-center gap-2">
+                        <Avatar className="w-5 h-5" />
                         <Name />
                     </ConnectWallet>
                 </Wallet>
@@ -78,39 +77,27 @@ export function UseCreditsForm() {
     }
 
     return (
-        <div className="use-credits-card">
-            <div className="card-header">
-                <h2>Use Credits</h2>
-                <Wallet>
-                    <ConnectWallet className="wallet-btn">
-                        <Avatar className="avatar" />
-                        <Name />
-                    </ConnectWallet>
-                    <WalletDropdown>
-                        <Identity className="identity" hasCopyAddressOnClick>
-                            <Avatar />
-                            <Name />
-                            <Address />
-                        </Identity>
-                        <WalletDropdownDisconnect />
-                    </WalletDropdown>
-                </Wallet>
-            </div>
-
+        <div className="space-y-4">
             {/* Current Balance Display */}
-            <div className="balance-section">
-                <div className="balance-row">
-                    <span className="label">Available Credits</span>
-                    <span className="value highlight">
-                        {isLoading ? 'Loading...' : `${balance} Credits`}
+            <div className="bg-[#0F1328] rounded-xl p-4">
+                <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-400">Available Credits</span>
+                    <span className="font-bold text-blue-400">
+                        {isLoading ? (
+                            <span className="animate-pulse">Loading...</span>
+                        ) : (
+                            `${balance} Credits`
+                        )}
                     </span>
                 </div>
             </div>
 
             {/* Input Form */}
-            <div className="form-section">
-                <div className="form-group">
-                    <label htmlFor="amount">Amount</label>
+            <div className="space-y-3">
+                <div>
+                    <label htmlFor="amount" className="block text-xs text-gray-400 mb-2 uppercase tracking-wider">
+                        Amount
+                    </label>
                     <input
                         id="amount"
                         type="number"
@@ -119,32 +106,34 @@ export function UseCreditsForm() {
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
                         placeholder="Enter credit amount"
-                        className="input-field"
+                        className="w-full bg-[#1A1F3A] border border-blue-700/30 rounded-xl p-3 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
                     />
                 </div>
 
-                <div className="form-group">
-                    <label htmlFor="reason">Reason / Purpose</label>
+                <div>
+                    <label htmlFor="reason" className="block text-xs text-gray-400 mb-2 uppercase tracking-wider">
+                        Reason / Purpose
+                    </label>
                     <input
                         id="reason"
                         type="text"
                         value={reason}
                         onChange={(e) => setReason(e.target.value)}
                         placeholder="e.g., AI Content Generation"
-                        className="input-field"
+                        className="w-full bg-[#1A1F3A] border border-blue-700/30 rounded-xl p-3 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
                     />
                 </div>
             </div>
 
             {/* Insufficient Credits Warning */}
             {!hasEnoughCredits && !isLoading && amountNum > 0 && (
-                <div className="warning">
+                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-sm text-red-400">
                     ⚠️ Insufficient credits. You have {balance} credits but need {amountNum}.
                 </div>
             )}
 
             {/* Transaction Section */}
-            <div className="transaction-section">
+            <div>
                 <Transaction
                     chainId={84532}
                     calls={useCreditsCall}
@@ -153,7 +142,7 @@ export function UseCreditsForm() {
                     <TransactionButton
                         text={`Use ${amountNum} Credit${amountNum !== 1 ? 's' : ''}`}
                         disabled={!hasEnoughCredits || isLoading || !reason.trim()}
-                        className="tx-button use-credits"
+                        className="w-full bg-pink-600 hover:bg-pink-700 disabled:bg-gray-600 disabled:opacity-50 text-white font-bold py-3 rounded-lg transition-colors"
                     />
                     <TransactionStatus>
                         <TransactionStatusLabel />
@@ -163,10 +152,8 @@ export function UseCreditsForm() {
             </div>
 
             {/* Info Section */}
-            <div className="info-section">
-                <p>
-                    💡 Credits will be deducted from your balance after successful transaction.
-                </p>
+            <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 text-xs text-gray-400">
+                💡 Credits will be deducted from your balance after successful transaction.
             </div>
         </div>
     );

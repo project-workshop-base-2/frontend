@@ -19,6 +19,7 @@ interface ContentState extends GenerationState {
   hashtags: string[];
   characterCount: number;
   validationErrors: string[];
+  contentId: string | null;
 }
 
 /**
@@ -41,6 +42,7 @@ export function useContentGeneration() {
     hashtags: [],
     characterCount: 0,
     validationErrors: [],
+    contentId: null,
   });
 
   /**
@@ -97,7 +99,8 @@ export function useContentGeneration() {
       personality: PersonalityConfig,
       topic: string,
       selectedHook: string,
-      scrapedData?: ScrapedData
+      scrapedData?: ScrapedData,
+      userAddress?: string
     ): Promise<string> => {
       setContentState((prev) => ({ ...prev, isLoading: true, error: null }));
 
@@ -105,7 +108,7 @@ export function useContentGeneration() {
         const response = await fetch("/api/generate/content", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ personality, topic, selectedHook, scrapedData }),
+          body: JSON.stringify({ personality, topic, selectedHook, scrapedData, userAddress }),
         });
 
         const data = await response.json();
@@ -121,6 +124,7 @@ export function useContentGeneration() {
           hashtags: data.hashtags || [],
           characterCount: data.characterCount || data.content.length,
           validationErrors: data.validationErrors || [],
+          contentId: data.contentId || null,
         });
 
         return data.content;
@@ -155,6 +159,7 @@ export function useContentGeneration() {
       hashtags: [],
       characterCount: 0,
       validationErrors: [],
+      contentId: null,
     });
   }, []);
 
@@ -181,6 +186,7 @@ export function useContentGeneration() {
       hashtags: [],
       characterCount: 0,
       validationErrors: [],
+      contentId: null,
     });
   }, []);
 
@@ -200,6 +206,7 @@ export function useContentGeneration() {
     hashtags: contentState.hashtags,
     characterCount: contentState.characterCount,
     validationErrors: contentState.validationErrors,
+    contentId: contentState.contentId,
     generateContent,
     resetContent,
 

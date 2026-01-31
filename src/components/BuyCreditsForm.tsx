@@ -136,12 +136,11 @@ export function BuyCreditsForm() {
 
     if (!isConnected) {
         return (
-            <div className="buy-credits-card">
-                <h2>Buy Credits</h2>
-                <p className="subtitle">Connect your wallet to purchase credits with IDRX</p>
+            <div className="text-center">
+                <p className="text-sm text-gray-400 mb-4">Connect your wallet to purchase credits with IDRX</p>
                 <Wallet>
-                    <ConnectWallet className="connect-btn">
-                        <Avatar className="avatar" />
+                    <ConnectWallet className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors flex items-center justify-center gap-2">
+                        <Avatar className="w-5 h-5" />
                         <Name />
                     </ConnectWallet>
                 </Wallet>
@@ -150,62 +149,56 @@ export function BuyCreditsForm() {
     }
 
     return (
-        <div className="buy-credits-card">
-            <div className="card-header">
-                <h2>Buy Credits</h2>
-                <Wallet>
-                    <ConnectWallet className="wallet-btn">
-                        <Avatar className="avatar" />
-                        <Name />
-                    </ConnectWallet>
-                    <WalletDropdown>
-                        <Identity className="identity" hasCopyAddressOnClick>
-                            <Avatar />
-                            <Name />
-                            <Address />
-                        </Identity>
-                        <WalletDropdownDisconnect />
-                    </WalletDropdown>
-                </Wallet>
-            </div>
-
+        <div className="space-y-4">
             {/* Balance Display */}
-            <div className="balance-section">
-                <div className="balance-row">
-                    <span className="label">Current Credits</span>
-                    <span className="value">
-                        {creditLoading ? 'Loading...' : `${currentCredits} Credits`}
+            <div className="bg-[#0F1328] rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-400">Current Credits</span>
+                    <span className="font-semibold">
+                        {creditLoading ? (
+                            <span className="animate-pulse">Loading...</span>
+                        ) : (
+                            `${currentCredits} Credits`
+                        )}
                     </span>
                 </div>
-                <div className="balance-row">
-                    <span className="label">IDRX Balance</span>
-                    <span className="value">
-                        {balanceLoading ? 'Loading...' : formatBalanceRaw(balance as bigint)}
+                <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-400">IDRX Balance</span>
+                    <span className="font-semibold">
+                        {balanceLoading ? (
+                            <span className="animate-pulse">Loading...</span>
+                        ) : (
+                            formatBalanceRaw(balance as bigint)
+                        )}
                     </span>
                 </div>
-                <div className="balance-row">
-                    <span className="label">Credit Price</span>
-                    <span className="value highlight">
-                        {priceLoading ? 'Loading...' : formatBalanceRaw(creditPriceRaw)}
+                <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-400">Credit Price</span>
+                    <span className="font-bold text-blue-400">
+                        {priceLoading ? (
+                            <span className="animate-pulse">Loading...</span>
+                        ) : (
+                            formatBalanceRaw(creditPriceRaw)
+                        )}
                     </span>
                 </div>
                 {hasEnoughAllowance && !isLoading && (
-                    <div className="balance-row">
-                        <span className="label">Status</span>
-                        <span className="value approved">✓ Approved</span>
+                    <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-400">Status</span>
+                        <span className="font-semibold text-green-400">✓ Approved</span>
                     </div>
                 )}
             </div>
 
             {/* Insufficient Balance Warning */}
             {!hasEnoughBalance && !isLoading && (
-                <div className="warning">
+                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 text-sm text-yellow-400">
                     ⚠️ Insufficient IDRX balance. You need at least {formatBalanceRaw(creditPriceRaw)}.
                 </div>
             )}
 
             {/* Transaction Section */}
-            <div className="transaction-section">
+            <div>
                 {needsApproval ? (
                     <Transaction
                         chainId={84532}
@@ -215,7 +208,7 @@ export function BuyCreditsForm() {
                         <TransactionButton
                             text="Approve IDRX Usage"
                             disabled={!hasEnoughBalance || isLoading}
-                            className="tx-button approve"
+                            className="w-full bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600 disabled:opacity-50 text-white font-bold py-3 rounded-lg transition-colors"
                         />
                         <TransactionStatus>
                             <TransactionStatusLabel />
@@ -229,9 +222,9 @@ export function BuyCreditsForm() {
                         onSuccess={handleSuccess}
                     >
                         <TransactionButton
-                            text={`Buy Credits (${formatBalanceRaw(creditPriceRaw)})`}
+                            text={`Buy 1 Credit (${formatBalanceRaw(creditPriceRaw)})`}
                             disabled={!hasEnoughBalance || isLoading}
-                            className="tx-button buy"
+                            className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:opacity-50 text-white font-bold py-3 rounded-lg transition-colors"
                         />
                         <TransactionStatus>
                             <TransactionStatusLabel />
@@ -242,12 +235,10 @@ export function BuyCreditsForm() {
             </div>
 
             {/* Info Section */}
-            <div className="info-section">
-                <p>
-                    💡 {needsApproval
-                        ? 'First, approve the IDRX spending. Then you can buy credits.'
-                        : 'You\'re ready to buy credits!'}
-                </p>
+            <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 text-xs text-gray-400">
+                💡 {needsApproval
+                    ? 'First, approve the IDRX spending. Then you can buy credits.'
+                    : 'You\'re ready to buy credits! Each credit lets you generate AI content.'}
             </div>
         </div>
     );

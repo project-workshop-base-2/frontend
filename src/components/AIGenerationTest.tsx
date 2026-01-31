@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useAccount } from "wagmi";
 import { useContentGeneration } from "@/hooks/useContentGeneration";
 import { usePersonalityTemplates } from "@/hooks/usePersonalityTemplates";
 import { useScraping } from "@/hooks/useScraping";
@@ -8,6 +9,7 @@ import { PersonalityConfig } from "@/types/personality";
 import { FarcasterPostButton } from "./FarcasterPostButton";
 
 export function AIGenerationTest() {
+  const { address } = useAccount();
   const [topic, setTopic] = useState("");
   const [selectedHook, setSelectedHook] = useState<string | null>(null);
   const [step, setStep] = useState<"select" | "topic" | "hooks" | "content">("select");
@@ -32,6 +34,7 @@ export function AIGenerationTest() {
     contentLoading,
     contentError,
     characterCount,
+    contentId,
     generateContent,
     reset,
   } = useContentGeneration();
@@ -91,10 +94,13 @@ export function AIGenerationTest() {
   // Handle hook selection
   const handleSelectHook = async (hook: string) => {
     setSelectedHook(hook);
-    if (!selectedTemplate) return;
+    if (!selectedTemplate || !address) {
+      console.error('Missing template or wallet address');
+      return;
+    }
 
     try {
-      await generateContent(selectedTemplate, topic, hook, scrapedData || undefined);
+      await generateContent(selectedTemplate, topic, hook, scrapedData || undefined, address);
       setStep("content");
     } catch (error) {
       console.error("Failed to generate content:", error);
@@ -113,6 +119,18 @@ export function AIGenerationTest() {
   };
 
   const isProcessing = hooksLoading || isScrapingTopic;
+
+  // Check wallet connection
+  if (!address) {
+    return (
+      <div className="ai-generation-test">
+        <div className="test-header">
+          <h2>AI Content Generation</h2>
+          <p className="subtitle text-red-400">Please connect your wallet to generate content</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="ai-generation-test">
@@ -356,6 +374,7 @@ export function AIGenerationTest() {
             <h4>Post to Farcaster</h4>
             <FarcasterPostButton
               content={content}
+              contentId={contentId || undefined}
               onSuccess={(hash) => {
                 console.log("Posted to Farcaster:", hash);
               }}

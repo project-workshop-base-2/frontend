@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { SignInButton, useProfile } from "@farcaster/auth-kit";
+import { useComposeCast } from '@coinbase/onchainkit/minikit';
+import { useMiniKit } from '@coinbase/onchainkit/minikit';
 
 interface FarcasterPostButtonProps {
   content: string;
@@ -15,20 +17,43 @@ export function FarcasterPostButton({
   onError,
 }: FarcasterPostButtonProps) {
   const { isAuthenticated, profile } = useProfile();
+  const { composeCast } = useComposeCast();
+  const { context } = useMiniKit();
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  // Generate Warpcast compose URL with pre-filled content
+  // Check if we're in Mini App context
+  const isInMiniApp = !!context;
+
+  // Generate Warpcast compose URL with pre-filled content (fallback)
   const getWarpcastUrl = () => {
     const encodedText = encodeURIComponent(content.trim());
     return `https://warpcast.com/~/compose?text=${encodedText}`;
   };
 
-  // Handle Share to Warpcast
-  const handleShareToWarpcast = () => {
-    const url = getWarpcastUrl();
-    window.open(url, '_blank', 'noopener,noreferrer');
-    onSuccess?.('shared'); // Notify parent that share was triggered
+  // Handle posting via Mini App SDK or fallback to Warpcast
+  const handlePostToFarcaster = () => {
+    if (!isInMiniApp) {
+      // Fallback: open Warpcast if not in Mini App
+      const url = getWarpcastUrl();
+      window.open(url, '_blank', 'noopener,noreferrer');
+      onSuccess?.('shared');
+      return;
+    }
+
+    try {
+      // Use the MiniKit composeCast hook for direct posting
+      composeCast({
+        text: content.trim(),
+        embeds: [] // Can add frame URL here if needed
+      });
+      onSuccess?.('cast-composed');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to compose cast';
+      setError(errorMessage);
+      onError?.(errorMessage);
+      setTimeout(() => setError(null), 3000);
+    }
   };
 
   // Handle Copy Content
@@ -85,12 +110,12 @@ export function FarcasterPostButton({
       <div className="fc-actions">
         <button
           className="fc-btn primary"
-          onClick={handleShareToWarpcast}
+          onClick={handlePostToFarcaster}
           disabled={!content}
-          title="Opens Warpcast with your content pre-filled"
+          title={isInMiniApp ? "Post directly to Farcaster" : "Opens Warpcast with your content pre-filled"}
         >
           <FarcasterIcon />
-          Share to Warpcast
+          {isInMiniApp ? 'Post to Farcaster' : 'Share to Warpcast'}
         </button>
 
         <button
@@ -114,7 +139,9 @@ export function FarcasterPostButton({
       </div>
 
       <p className="fc-hint">
-        Click "Share to Warpcast" to open Warpcast with your content ready to post
+        {isInMiniApp
+          ? 'Click "Post to Farcaster" to compose your cast directly'
+          : 'Click "Share to Warpcast" to open Warpcast with your content ready to post'}
       </p>
 
       <style jsx>{styles}</style>

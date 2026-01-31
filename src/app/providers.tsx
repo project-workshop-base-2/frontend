@@ -43,6 +43,11 @@ export function Providers({ children }: { children: ReactNode }) {
                                     theme: 'default',
                                 },
                             }}
+                            miniKit={{
+                                enabled: true,
+                                autoConnect: true,
+                            }}
+                            apiKey={process.env.NEXT_PUBLIC_CDP_CLIENT_API_KEY}
                         >
                             {children}
                         </OnchainKitProvider>
@@ -79,6 +84,11 @@ export function Providers({ children }: { children: ReactNode }) {
                                     theme: 'default',
                                 },
                             }}
+                            miniKit={{
+                                enabled: true,
+                                autoConnect: true,
+                            }}
+                            apiKey={process.env.NEXT_PUBLIC_CDP_CLIENT_API_KEY}
                         >
                             {children}
                         </OnchainKitProvider>
