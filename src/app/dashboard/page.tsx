@@ -36,7 +36,7 @@ function DashboardContent() {
 
   // Handle Generate Now click with credit check
   const handleGenerateClick = () => {
-    if (creditBalance === 0) {
+    if (!creditBalance || creditBalance === 0n) {
       setShowCreditWarning(true);
     } else {
       router.push('/ai-studio');
