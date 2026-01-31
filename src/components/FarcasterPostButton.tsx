@@ -7,12 +7,14 @@ import { useMiniKit } from '@coinbase/onchainkit/minikit';
 
 interface FarcasterPostButtonProps {
   content: string;
+  contentId?: string;
   onSuccess?: (hash: string) => void;
   onError?: (error: string) => void;
 }
 
 export function FarcasterPostButton({
   content,
+  contentId,
   onSuccess,
   onError,
 }: FarcasterPostButtonProps) {
@@ -32,11 +34,28 @@ export function FarcasterPostButton({
   };
 
   // Handle posting via Mini App SDK or fallback to Warpcast
-  const handlePostToFarcaster = () => {
+  const handlePostToFarcaster = async () => {
     if (!isInMiniApp) {
       // Fallback: open Warpcast if not in Mini App
       const url = getWarpcastUrl();
       window.open(url, '_blank', 'noopener,noreferrer');
+
+      // Update database status to "posted" (optimistic)
+      if (contentId) {
+        try {
+          await fetch('/api/content/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contentId,
+              status: 'posted',
+            }),
+          });
+        } catch (err) {
+          console.error('Failed to update content status:', err);
+        }
+      }
+
       onSuccess?.('shared');
       return;
     }
@@ -47,11 +66,45 @@ export function FarcasterPostButton({
         text: content.trim(),
         embeds: [] // Can add frame URL here if needed
       });
+
+      // Update database status to "posted"
+      if (contentId) {
+        try {
+          await fetch('/api/content/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contentId,
+              status: 'posted',
+            }),
+          });
+        } catch (err) {
+          console.error('Failed to update content status:', err);
+        }
+      }
+
       onSuccess?.('cast-composed');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to compose cast';
       setError(errorMessage);
       onError?.(errorMessage);
+
+      // Mark as failed if posting fails
+      if (contentId) {
+        try {
+          await fetch('/api/content/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contentId,
+              status: 'failed',
+            }),
+          });
+        } catch (updateErr) {
+          console.error('Failed to update failure status:', updateErr);
+        }
+      }
+
       setTimeout(() => setError(null), 3000);
     }
   };
