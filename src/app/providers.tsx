@@ -15,8 +15,10 @@ import '@farcaster/auth-kit/styles.css';
 
 const farcasterConfig = {
     rpcUrl: 'https://mainnet.optimism.io',
-    domain: process.env.NEXT_PUBLIC_FARCASTER_DOMAIN || 'localhost:3000',
-    siweUri: process.env.NEXT_PUBLIC_FARCASTER_SIWE_URI || 'http://localhost:3000',
+    domain: process.env.NEXT_PUBLIC_FARCASTER_DOMAIN ||
+            (typeof window !== 'undefined' ? window.location.host : 'localhost:3000'),
+    siweUri: process.env.NEXT_PUBLIC_FARCASTER_SIWE_URI ||
+             (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'),
 };
 
 export function Providers({
