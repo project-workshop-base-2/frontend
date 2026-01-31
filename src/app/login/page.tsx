@@ -2,14 +2,16 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAccount } from 'wagmi';
 import { useAuth } from '@/contexts/AuthContext';
 import { ConnectWallet, Wallet } from '@coinbase/onchainkit/wallet';
-import { Avatar, Name, Address } from '@coinbase/onchainkit/identity';
+import { Avatar, Name, Address, Identity } from '@coinbase/onchainkit/identity';
 import { SignInButton, useProfile } from '@farcaster/auth-kit';
 import { Zap, CheckCircle2 } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { address } = useAccount();
   const { isFullyAuthenticated, isWalletConnected, isFarcasterConnected } = useAuth();
   const { profile } = useProfile();
 
@@ -63,10 +65,7 @@ export default function LoginPage() {
                   Connect your wallet to get started with Base
                 </p>
                 <Wallet>
-                  <ConnectWallet className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors">
-                    <Avatar className="h-6 w-6" />
-                    <Name />
-                  </ConnectWallet>
+                  <ConnectWallet className="w-full" />
                 </Wallet>
               </div>
             ) : (
@@ -75,12 +74,19 @@ export default function LoginPage() {
                   <CheckCircle2 className="w-4 h-4" />
                   Wallet Connected
                 </p>
-                <div className="mt-2 flex items-center gap-2">
-                  <Avatar className="h-6 w-6" />
-                  <div className="text-xs text-gray-300">
-                    <Address />
+                {address && (
+                  <div className="mt-2">
+                    <Identity
+                      address={address}
+                      className="flex items-center gap-2"
+                    >
+                      <Avatar className="h-6 w-6" />
+                      <div className="text-xs text-gray-300">
+                        <Address />
+                      </div>
+                    </Identity>
                   </div>
-                </div>
+                )}
               </div>
             )}
           </div>
@@ -117,14 +123,30 @@ export default function LoginPage() {
                     : 'Complete Step 1 first'}
                 </p>
                 {isWalletConnected && (
-                  <SignInButton
-                    onSuccess={({ fid, username }) => {
-                      console.log(`Signed in as @${username} (FID: ${fid})`);
-                    }}
-                    onError={(error) => {
-                      console.error('Farcaster sign in error:', error);
-                    }}
-                  />
+                  <div className="farcaster-signin-wrapper">
+                    <SignInButton
+                      nonce={async () => {
+                        try {
+                          const response = await fetch('/api/farcaster/nonce');
+                          const data = await response.json();
+                          return data.nonce;
+                        } catch (error) {
+                          console.error('Failed to fetch nonce:', error);
+                          throw error;
+                        }
+                      }}
+                      onSuccess={({ fid, username }) => {
+                        console.log(`✅ Signed in as @${username} (FID: ${fid})`);
+                      }}
+                      onError={(error) => {
+                        console.error('❌ Farcaster sign in error:', error);
+                        alert(`Sign in failed: ${error?.message || 'Unknown error'}`);
+                      }}
+                      onSignOut={() => {
+                        console.log('Signed out from Farcaster');
+                      }}
+                    />
+                  </div>
                 )}
               </div>
             ) : (
