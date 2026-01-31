@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Zap, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAccount } from 'wagmi';
@@ -12,7 +12,39 @@ export default function DashboardPage() {
   const router = useRouter();
   const { address } = useAccount();
   const [currentPage, setCurrentPage] = useState(1);
+  const [mounted, setMounted] = useState(false);
   const postsPerPage = 5;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Helper functions - must be defined before use
+  const formatTimestamp = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} mins ago`;
+    if (diffMins < 1440) return `${Math.floor(diffMins / 60)} hours ago`;
+    return `${Math.floor(diffMins / 1440)} days ago`;
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'POSTED': return 'bg-green-500/20 text-green-400';
+      case 'GENERATED': return 'bg-blue-500/20 text-blue-400';
+      case 'FAILED': return 'bg-red-500/20 text-red-400';
+      default: return 'bg-gray-500/20 text-gray-400';
+    }
+  };
+
+  const formatAddress = (addr: string | undefined) => {
+    if (!addr) return '0x...';
+    return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+  };
 
   const { history, isLoading, error, total } = useContentHistory();
 
@@ -26,39 +58,15 @@ export default function DashboardPage() {
     status: item.status.toUpperCase(),
   }));
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'POSTED': return 'bg-green-500/20 text-green-400';
-      case 'GENERATED': return 'bg-blue-500/20 text-blue-400';
-      case 'FAILED': return 'bg-red-500/20 text-red-400';
-      default: return 'bg-gray-500/20 text-gray-400';
-    }
-  };
-
-  const formatTimestamp = (timestamp: string) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins} mins ago`;
-    if (diffMins < 1440) return `${Math.floor(diffMins / 60)} hours ago`;
-    return `${Math.floor(diffMins / 1440)} days ago`;
-  };
-
-  const formatAddress = (addr: string | undefined) => {
-    if (!addr) return '0x...';
-    return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
-  };
-
   return (
     <div className="min-h-screen bg-[#0A0D1F]">
       <div className="max-w-[430px] mx-auto text-white pb-20">
         {/* Header */}
         <header className="px-4 py-4 flex items-center justify-between bg-[#0F1328]">
           <div>
-            <div className="text-xs text-gray-400">{formatAddress(address)}</div>
+            <div className="text-xs text-gray-400">
+              {mounted ? formatAddress(address) : '0x...'}
+            </div>
             <div className="text-xs text-blue-400 mt-0.5">BASE SEPOLIA</div>
           </div>
           <button
