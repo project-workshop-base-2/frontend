@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useComposeCast } from '@coinbase/onchainkit/minikit';
-import { useMiniKit } from '@coinbase/onchainkit/minikit';
 import { useAccount } from 'wagmi';
 
 interface FarcasterPostButtonProps {
@@ -19,66 +18,37 @@ export function FarcasterPostButton({
   onError,
 }: FarcasterPostButtonProps) {
   const { composeCast } = useComposeCast();
-  const { context } = useMiniKit();
   const { address, isConnected } = useAccount();
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
 
-  // Check if we're in Mini App context
-  const isInMiniApp = !!context;
-
-  // Generate Warpcast compose URL with pre-filled content (fallback)
-  const getWarpcastUrl = () => {
-    const encodedText = encodeURIComponent(content.trim());
-    return `https://warpcast.com/~/compose?text=${encodedText}`;
-  };
-
-  // Handle posting via Mini App SDK or fallback to Warpcast
+  // Handle posting via Mini App SDK (in-app navigation)
   const handlePostToFarcaster = async () => {
     setIsPosting(true);
     setError(null);
 
     try {
-      if (!isInMiniApp) {
-        // Fallback: open Warpcast if not in Mini App
-        const url = getWarpcastUrl();
-        window.open(url, '_blank', 'noopener,noreferrer');
+      // Always use composeCast for in-app experience
+      // This keeps user inside the app (best UX for mini apps)
+      composeCast({
+        text: content.trim(),
+        embeds: [window.location.origin] // Add app URL as embed
+      });
 
-        // Update database status to "posted" (optimistic)
-        if (contentId) {
-          await fetch('/api/content/update', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contentId,
-              status: 'posted',
-            }),
-          });
-        }
-
-        onSuccess?.('shared');
-      } else {
-        // Use the MiniKit composeCast hook for direct posting
-        composeCast({
-          text: content.trim(),
-          embeds: [window.location.origin] // Add app URL as embed
+      // Update database status to "posted" (optimistic)
+      if (contentId) {
+        await fetch('/api/content/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contentId,
+            status: 'posted',
+          }),
         });
-
-        // Update database status to "posted"
-        if (contentId) {
-          await fetch('/api/content/update', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contentId,
-              status: 'posted',
-            }),
-          });
-        }
-
-        onSuccess?.('cast-composed');
       }
+
+      onSuccess?.('cast-composed');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to compose cast';
       setError(errorMessage);
@@ -139,13 +109,10 @@ export function FarcasterPostButton({
           className="fc-btn primary"
           onClick={handlePostToFarcaster}
           disabled={!content || isPosting}
-          title={isInMiniApp ? "Post directly to Farcaster" : "Opens Warpcast with your content pre-filled"}
+          title="Compose and post to Farcaster"
         >
           <FarcasterIcon />
-          {isPosting
-            ? 'Posting...'
-            : (isInMiniApp ? 'Post to Farcaster' : 'Share to Warpcast')
-          }
+          {isPosting ? 'Opening Composer...' : 'Post to Farcaster'}
         </button>
 
         <button
@@ -169,9 +136,7 @@ export function FarcasterPostButton({
       </div>
 
       <p className="fc-hint">
-        {isInMiniApp
-          ? '✨ Using OnchainKit MiniKit - Direct posting to Farcaster'
-          : 'Opens Warpcast with your content ready to post'}
+        ✨ Compose your cast in-app with OnchainKit
       </p>
 
       <style jsx>{styles}</style>
